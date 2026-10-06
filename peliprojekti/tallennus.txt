@@ -1,0 +1,21 @@
+{
+  "674773": {
+    "name": "Xuesos",
+    "age": 77,
+    "location": 1,
+    "items": [
+      "Excalibur",
+      "Mjolnir"
+    ],
+    "rooms": [
+      {
+        "solved": true,
+        "has_item": false
+      },
+      {
+        "solved": true,
+        "has_item": false
+      }
+    ]
+  }
+}

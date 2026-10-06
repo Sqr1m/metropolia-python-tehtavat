@@ -1,3 +1,8 @@
+import json
+import os
+import random
+
+
 class Item:
     def __init__(self, name, weight):
         self.name = name
@@ -89,7 +94,7 @@ class Player:
             print("Inventaario on tyhjä.")
             return
 
-        item_name = input("Anna poistettava esine: ")
+        item_name = input("Anna poistettava esine: ").strip()
 
         for item in self.items:
             if item.name.lower() == item_name.lower():
@@ -107,9 +112,11 @@ class Player:
 
 
 class Menu:
-    def __init__(self, player, rooms):
+    def __init__(self, player, rooms, saves, save_code):
         self.player = player
         self.rooms = rooms
+        self.saves = saves
+        self.save_code = save_code
 
     def choose_room(self):
         print("\nHuoneet:")
@@ -142,7 +149,7 @@ class Menu:
             print("7 - Tulosta pelaajan tiedot")
             print("lopeta - Lopeta peli")
 
-            command = input("Anna komento: ")
+            command = input("Anna komento: ").strip()
 
             if command == "1":
                 self.player.location.show_information()
@@ -166,6 +173,27 @@ class Menu:
                 self.player.print_information()
 
             elif command == "lopeta":
+                if self.save_code is None:
+                    self.save_code = str(random.randint(100000, 999999))
+
+                    while self.save_code in self.saves:
+                        self.save_code = str(random.randint(100000, 999999))
+
+                self.saves[self.save_code] = {
+                    "name": self.player.name,
+                    "age": self.player.age,
+                    "location": self.rooms.index(self.player.location),
+                    "items": [item.name for item in self.player.items],
+                    "rooms": [
+                        {"solved": room.solved, "has_item": room.item is not None}
+                        for room in self.rooms
+                    ],
+                }
+
+                with open("tallennus.txt", "w", encoding="utf-8") as file:
+                    json.dump(self.saves, file, ensure_ascii=False, indent=2)
+
+                print(f"Peli tallennettu. Jatkokoodisi on: {self.save_code}")
                 print("Kiitos pelaamisesta!")
                 break
 
@@ -174,24 +202,44 @@ class Menu:
 
 
 def main():
-    name = input("Nimi: ")
+    with open("intro_ohjeet.txt", "r", encoding="utf-8") as file:
+        print(file.read())
 
-    try:
-        age = int(input("Ikä: "))
-    except ValueError:
-        print("Ikä pitää antaa numerona.")
+    if os.path.exists("tallennus.txt"):
+        with open("tallennus.txt", "r", encoding="utf-8") as file:
+            saves = json.load(file)
+    else:
+        saves = {}
+
+    code = input("Anna jatkokoodi tai aloita uusi peli numerolla 2: ").strip()
+
+    if code == "2":
+        name = input("Nimi: ")
+        age_text = input("Ikä: ").strip()
+
+        if not age_text.isdigit():
+            print("Ikä pitää antaa numerona.")
+            return
+
+        age = int(age_text)
+
+        if age < 12:
+            print("Olet liian nuori pelaamaan.")
+            return
+
+        print(f"Tervetuloa, {name}, peliin!")
+
+    elif code in saves:
+        print(f"Tervetuloa takaisin, {saves[code]['name']}!")
+
+    else:
+        print("Tallennusta ei löytynyt.")
         return
-
-    if age < 12:
-        print("Olet liian nuori pelaamaan.")
-        return
-
-    print(f"Tervetuloa, {name}, peliin!")
 
     excalibur = Item("Excalibur", 9999)
     mjolnir = Item("Mjolnir", 9999)
 
-    entrance_challenge = """
+    entrance_challenge = """\
 numbers = [2, 5, 1, 4]
 result = 0
 
@@ -204,7 +252,7 @@ for number in numbers:
 print(result)
 """
 
-    boss_challenge = """
+    boss_challenge = """\
 numbers = [3, 1, 4, 1, 5]
 total = 0
 
@@ -233,9 +281,29 @@ print(total)
 
     rooms = [room_1, room_2]
 
-    player = Player(name, age, room_1)
+    if code == "2":
+        player = Player(name, age, room_1)
+        save_code = None
 
-    menu = Menu(player, rooms)
+    else:
+        saved = saves[code]
+
+        player = Player(saved["name"], saved["age"], rooms[saved["location"]])
+
+        available_items = {"Excalibur": excalibur, "Mjolnir": mjolnir}
+
+        for item_name in saved["items"]:
+            player.items.append(available_items[item_name])
+
+        for room, saved_room in zip(rooms, saved["rooms"]):
+            room.solved = saved_room["solved"]
+
+            if not saved_room["has_item"]:
+                room.item = None
+
+        save_code = code
+
+    menu = Menu(player, rooms, saves, save_code)
     menu.main_menu()
 
 

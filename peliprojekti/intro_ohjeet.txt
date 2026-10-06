@@ -1,0 +1,8 @@
+Tervetuloa algoritmiseikkailuun!
+Ratkaise huoneiden haasteet ja kerää esineet.
+
+OHJEET
+Valitse toiminto päävalikosta kirjoittamalla sen numero.
+Ratkaise huoneen haaste ennen esineen keräämistä.
+Kirjoita lopeta, kun haluat tallentaa pelin ja poistua.
+Ota saamasi jatkokoodi talteen seuraavaa pelikertaa varten.
